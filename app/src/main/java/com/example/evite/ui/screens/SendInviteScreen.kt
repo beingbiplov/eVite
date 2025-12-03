@@ -4,8 +4,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 
 @Composable
-fun RegisterScreen() {
-    ScreenContainer(title = "Register") {
-        Text("Register Screen")
+fun SendInviteScreen() {
+    ScreenContainer(title = "Send Invite") {
+        Text("Send Invite Screen")
     }
 }

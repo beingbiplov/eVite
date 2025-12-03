@@ -4,8 +4,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 
 @Composable
-fun RegisterScreen() {
-    ScreenContainer(title = "Register") {
-        Text("Register Screen")
+fun EditProfileScreen() {
+    ScreenContainer(title = "Edit Profile") {
+        Text("Edit Profile Screen")
     }
 }
