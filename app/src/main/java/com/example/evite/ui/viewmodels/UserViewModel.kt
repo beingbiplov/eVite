@@ -16,22 +16,39 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     private val repo = UserRepository(userDao)
 
     private val _loginState = MutableStateFlow<String?>(null)
-    val loginState = _loginState.asStateFlow()
+    val loginState = MutableStateFlow<String?>(null)
+    val isLoading = MutableStateFlow(false)
 
     private val _registerState = MutableStateFlow<String?>(null)
     val registerState = _registerState.asStateFlow()
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
-            val user = repo.login(email, password)
-            _loginState.value = if (user != null) "success" else "Invalid email or password"
+            isLoading.value = true
+            loginState.value = null   // reset state properly
+
+            val hashedPassword = HashUtil.sha256(password)
+            val user = userDao.login(email, hashedPassword)
+
+            isLoading.value = false
+
+            loginState.value = if (user != null) {
+                "success"
+            } else {
+                "Invalid email or password"
+            }
         }
     }
+
 
     fun register(fullName: String, email: String, password: String) {
         viewModelScope.launch {
             val result = repo.registerUser(fullName, email, password)
             _registerState.value = if (result > 0) "success" else "Failed to register"
         }
+    }
+
+    fun clearLoginState() {
+        _loginState.value = null
     }
 }
