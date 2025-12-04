@@ -16,6 +16,7 @@ fun BottomNavBar(navController: NavHostController) {
 
     NavigationBar {
 
+
         NavigationBarItem(
             selected = currentRoute == NavRoutes.Home.route,
             onClick = {

@@ -14,11 +14,33 @@ fun AppNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = NavRoutes.Home.route,
+        startDestination = NavRoutes.Login.route,
         modifier = modifier
     ) {
-        composable(NavRoutes.Home.route) { HomeScreen() }
-        composable(NavRoutes.CreateEvent.route) { CreateEventScreen() }
-        composable(NavRoutes.Profile.route) { ProfileScreen() }
+        composable(NavRoutes.Login.route) {
+            LoginScreen(
+                onLoginSuccess = { navController.navigate(NavRoutes.Home.route) },
+                onRegisterClick = { navController.navigate(NavRoutes.Register.route) }
+            )
+        }
+
+        composable(NavRoutes.Register.route) {
+            RegisterScreen(
+                onRegisterSuccess = { navController.navigate(NavRoutes.Login.route) },
+                onBackToLogin = { navController.popBackStack() }
+            )
+        }
+
+        composable(NavRoutes.Home.route) {
+            HomeScreen()
+        }
+
+        composable(route = NavRoutes.CreateEvent.route) {
+            CreateEventScreen()
+        }
+
+        composable(route= NavRoutes.Profile.route) {
+            ProfileScreen()
+        }
     }
 }
