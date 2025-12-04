@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(onLogout: () -> Unit = {}) {
     Box(
         modifier = Modifier
             .fillMaxSize()

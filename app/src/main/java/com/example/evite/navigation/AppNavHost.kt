@@ -1,46 +1,95 @@
 package com.example.evite.navigation
 
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import com.example.evite.ui.screens.*
+import androidx.navigation.compose.NavHost
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.composable
+import androidx.compose.runtime.collectAsState
+import com.example.evite.ui.viewmodels.UserViewModel
 
 @Composable
 fun AppNavHost(
     navController: NavHostController,
+    userViewModel: UserViewModel,
     modifier: Modifier = Modifier
 ) {
+    val isLoggedIn = userViewModel.isLoggedIn.collectAsState().value
+
     NavHost(
         navController = navController,
-        startDestination = NavRoutes.Login.route,
+        startDestination = if (isLoggedIn) NavRoutes.Home.route else NavRoutes.Login.route,
         modifier = modifier
     ) {
+
+        // -------------------- LOGIN -------------------------
         composable(NavRoutes.Login.route) {
             LoginScreen(
-                onLoginSuccess = { navController.navigate(NavRoutes.Home.route) },
-                onRegisterClick = { navController.navigate(NavRoutes.Register.route) }
+                viewModel = userViewModel,
+                onLoginSuccess = {
+                    navController.navigate(NavRoutes.Home.route) {
+                        popUpTo(NavRoutes.Login.route) { inclusive = true }
+                    }
+                },
+                onRegisterClick = {
+                    navController.navigate(NavRoutes.Register.route)
+                }
             )
         }
 
+        // -------------------- REGISTER -------------------------
         composable(NavRoutes.Register.route) {
             RegisterScreen(
-                onRegisterSuccess = { navController.navigate(NavRoutes.Login.route) },
+                viewModel = userViewModel,
+                onRegisterSuccess = {
+                    navController.navigate(NavRoutes.Login.route) {
+                        popUpTo(NavRoutes.Register.route) { inclusive = true }
+                    }
+                },
                 onBackToLogin = { navController.popBackStack() }
             )
         }
 
+        // -------------------- HOME (protected) -------------------------
         composable(NavRoutes.Home.route) {
-            HomeScreen()
+            if (!isLoggedIn) {
+                navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
+            } else {
+                HomeScreen(
+                    onLogout = {
+                        userViewModel.logout()
+                        navController.navigate(NavRoutes.Login.route) {
+                            popUpTo(0)
+                        }
+                    }
+                )
+            }
         }
 
-        composable(route = NavRoutes.CreateEvent.route) {
-            CreateEventScreen()
+        // -------------------- CREATE EVENT -------------------------
+        composable(NavRoutes.CreateEvent.route) {
+            if (!isLoggedIn) {
+                navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
+            } else {
+                CreateEventScreen()
+            }
         }
 
-        composable(route= NavRoutes.Profile.route) {
-            ProfileScreen()
+        // -------------------- PROFILE -------------------------
+        composable(NavRoutes.Profile.route) {
+            if (!isLoggedIn) {
+                navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
+            } else {
+                ProfileScreen(
+                    onLogout = {
+                        userViewModel.logout()
+                        navController.navigate(NavRoutes.Login.route) {
+                            popUpTo(0)
+                        }
+                    }
+                )
+            }
         }
     }
 }
