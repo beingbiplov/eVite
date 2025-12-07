@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.evite.data.local.DatabaseProvider
 import com.example.evite.data.repository.UserRepository
 import com.example.evite.utils.HashUtil
+import com.example.evite.utils.ValidationUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -25,6 +26,11 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
+            if (!ValidationUtil.isValidEmail(email)) {
+                loginState.value = "Invalid email format"
+                return@launch
+            }
+
             isLoading.value = true
 
             val hashed = HashUtil.sha256(password)
@@ -48,6 +54,16 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
 
     fun register(fullName: String, email: String, password: String) {
         viewModelScope.launch {
+            if (!ValidationUtil.isValidEmail(email)) {
+                _registerState.value = "Invalid email format"
+                return@launch
+            }
+
+            if (!ValidationUtil.isValidPassword(password)) {
+                _registerState.value = "Password must be at least 8 characters and contain a number"
+                return@launch
+            }
+
             val result = repo.registerUser(fullName, email, password)
             _registerState.value = if (result > 0) "success" else "Failed to register"
         }
