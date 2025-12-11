@@ -1,9 +1,11 @@
 package com.example.evite.ui.viewmodels
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.evite.data.local.DatabaseProvider
+import com.example.evite.data.local.entities.User
 import com.example.evite.data.repository.UserRepository
 import com.example.evite.utils.HashUtil
 import com.example.evite.utils.ValidationUtil
@@ -24,6 +26,9 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
 
     val isLoggedIn = MutableStateFlow(false)
 
+    val loggedInUser = MutableStateFlow<User?>(null)
+
+
     fun login(email: String, password: String) {
         viewModelScope.launch {
             if (!ValidationUtil.isValidEmail(email)) {
@@ -41,6 +46,7 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
             if (user != null) {
                 loginState.value = "success"
                 isLoggedIn.value = true
+                loggedInUser.value = user
             } else {
                 loginState.value = "Invalid email or password"
             }
@@ -48,8 +54,10 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun logout() {
+        Log.d("UserViewModel", "Logging out. User was ${loggedInUser.value?.email}")
         loginState.value = null
         isLoggedIn.value = false
+        loggedInUser.value = null
     }
 
     fun register(fullName: String, email: String, password: String) {

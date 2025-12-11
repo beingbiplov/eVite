@@ -82,11 +82,15 @@ fun AppNavHost(
                 navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
             } else {
                 ProfileScreen(
+                    viewModel = userViewModel,
                     onLogout = {
                         userViewModel.logout()
                         navController.navigate(NavRoutes.Login.route) {
                             popUpTo(0)
                         }
+                    },
+                    onEditProfile = {
+                        println("Edit Profile clicked")
                     }
                 )
             }
