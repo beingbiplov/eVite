@@ -90,10 +90,19 @@ fun AppNavHost(
                         }
                     },
                     onEditProfile = {
-                        println("Edit Profile clicked")
+                        navController.navigate("edit_profile")
                     }
                 )
             }
         }
+
+        // -------------------- PROFILE UPDATE -------------------------
+        composable("edit_profile") {
+            EditProfileScreen(
+                viewModel = userViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
     }
 }

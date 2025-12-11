@@ -76,4 +76,11 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
             _registerState.value = if (result > 0) "success" else "Failed to register"
         }
     }
+
+    fun updateUser(updatedUser: User) {
+        viewModelScope.launch {
+            repo.updateUser(updatedUser)
+            loggedInUser.value = updatedUser 
+        }
+    }
 }

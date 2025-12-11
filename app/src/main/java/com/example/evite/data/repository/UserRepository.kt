@@ -23,4 +23,9 @@ class UserRepository(private val userDao: UserDao) {
         val hashedInput = HashUtil.sha256(password)
         return if (user != null && user.password == hashedInput) user else null
     }
+
+    suspend fun updateUser(user: User) {
+        userDao.updateUser(user)
+    }
+
 }
