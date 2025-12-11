@@ -62,6 +62,9 @@ fun AppNavHost(
                         navController.navigate(NavRoutes.Login.route) {
                             popUpTo(0)
                         }
+                    },
+                    onCreateEventClick = {
+                        navController.navigate(NavRoutes.CreateEvent.route)
                     }
                 )
             }
@@ -72,7 +75,11 @@ fun AppNavHost(
             if (!isLoggedIn) {
                 navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
             } else {
-                CreateEventScreen()
+                CreateEventScreen(
+                    onEventCreated = {
+                        navController.popBackStack()
+                    }
+                )
             }
         }
 
