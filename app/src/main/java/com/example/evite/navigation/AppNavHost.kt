@@ -77,7 +77,34 @@ fun AppNavHost(
             } else {
                 CreateEventScreen(
                     onEventCreated = {
+                        // After creating event, maybe go home or details?
+                        // User previously said "route to add email page" after save,
+                        // but now implies "add invitee" button does that.
+                        // For now keep previous logic or just pop back to Home as per latest conversation hint "return into home".
+                        // Wait, user said "save event button clicked... return into home". 
+                        // So I will change this to popBackStack which goes to Home.
                         navController.popBackStack()
+                    },
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onAddInviteeClick = {
+                         navController.navigate(NavRoutes.AddEmails.route)
+                    }
+                )
+            }
+        }
+
+        // -------------------- ADD EMAILS -------------------------
+        composable(NavRoutes.AddEmails.route) {
+            if (!isLoggedIn) {
+                navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
+            } else {
+                SendInviteScreen(
+                    onBack = { navController.popBackStack() },
+                    onInvite = { email, name ->
+                         // TODO: Handle adding invitee to ViewModel list
+                         navController.popBackStack()
                     }
                 )
             }

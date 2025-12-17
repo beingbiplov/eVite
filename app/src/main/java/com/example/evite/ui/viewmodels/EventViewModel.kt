@@ -39,6 +39,9 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
+            _creationState.value = "loading"
+            kotlinx.coroutines.delay(1000) // Simulate processing
+
             // Package all form data into Event object
             val newEvent = Event(
                 title = eventTitle.value,
@@ -56,6 +59,20 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // List of invitees added temporarily before saving
+    private val _temporaryInvitees = MutableStateFlow<List<com.example.evite.data.local.entities.Invitee>>(emptyList())
+    val temporaryInvitees = _temporaryInvitees.asStateFlow()
+
+    fun addTemporaryInvitee(name: String?, email: String) {
+        // Use update to safely modify key state
+        val newInvitee = com.example.evite.data.local.entities.Invitee(eventId = 0, name = name, email = email)
+        _temporaryInvitees.value = _temporaryInvitees.value + newInvitee
+    }
+
+    fun removeTemporaryInvitee(invitee: com.example.evite.data.local.entities.Invitee) {
+        _temporaryInvitees.value = _temporaryInvitees.value - invitee
+    }
+
     fun resetState() {
         // Clear all form fields back to defaults
         eventTitle.value = ""
@@ -63,6 +80,7 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
         eventDate.value = ""
         eventLocation.value = ""
         eventTheme.value = "Party"
+        _temporaryInvitees.value = emptyList() // Clear invitees
         _creationState.value = null
     }
 }
