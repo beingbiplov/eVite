@@ -65,6 +65,10 @@ fun AppNavHost(
                     },
                     onCreateEventClick = {
                         navController.navigate(NavRoutes.CreateEvent.route)
+                    },
+                    onEventClick = { event ->
+                        // TODO: Navigate to Event Details screen
+                        // navController.navigate("${NavRoutes.EventDetails.route}/${event.id}")
                     }
                 )
             }
