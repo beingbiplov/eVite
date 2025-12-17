@@ -35,6 +35,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.evite.ui.viewmodels.EventViewModel
 import java.util.Calendar
 import java.util.Locale
+import android.net.Uri
+import android.graphics.BitmapFactory
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -233,6 +241,20 @@ fun CreateEventScreen(
                     Text("Cover Photo", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     
+                    val context = LocalContext.current
+                    val imageLauncher = rememberLauncherForActivityResult(
+                        contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
+                    ) { uri ->
+                        if (uri != null) {
+                            // Persist permission (optional but good for some use cases)
+                            // context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                             viewModel.eventImageUri.value = uri.toString()
+                        }
+                    }
+                    
+                    val selectedImageUriString by viewModel.eventImageUri.collectAsState()
+                    val selectedImageBitmap = rememberBitmapFromUri(selectedImageUriString)
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -240,32 +262,53 @@ fun CreateEventScreen(
                             .dashedBorder(2.dp, MaterialTheme.colorScheme.outline, 8.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                            .clickable { /* TODO: Implement Image Picker */ },
+                            .clickable { 
+                                imageLauncher.launch(
+                                    androidx.activity.result.PickVisualMediaRequest(
+                                        androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    )
+                                ) 
+                            },
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowUpward, 
-                                contentDescription = "Upload",
-                                modifier = Modifier.size(32.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        if (selectedImageBitmap != null) {
+                            androidx.compose.foundation.Image(
+                                bitmap = selectedImageBitmap,
+                                contentDescription = "Selected Cover Photo",
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                "Drag & drop or click to upload",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        } else {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowUpward, 
+                                    contentDescription = "Upload",
+                                    modifier = Modifier.size(32.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    "Drag & drop or click to upload",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedButton(
-                        onClick = { /* TODO: Implement Image Picker */ },
+                        onClick = { 
+                            imageLauncher.launch(
+                                androidx.activity.result.PickVisualMediaRequest(
+                                    androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("Upload Photo")
+                        Text(if (selectedImageUriString != null) "Change Photo" else "Upload Photo")
                     }
                 }
 
@@ -517,4 +560,27 @@ fun Modifier.dashedBorder(width: Dp, color: Color, cornerRadius: Dp) = drawBehin
         ),
         cornerRadius = CornerRadius(cornerRadius.toPx())
     )
+}
+
+@Composable
+fun rememberBitmapFromUri(uriString: String?): ImageBitmap? {
+    if (uriString == null) return null
+    val context = LocalContext.current
+    val uri = remember(uriString) { Uri.parse(uriString) }
+    var bitmap by remember(uri) { mutableStateOf<ImageBitmap?>(null) }
+    
+    LaunchedEffect(uri) {
+        withContext(Dispatchers.IO) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val androidBitmap = BitmapFactory.decodeStream(inputStream)
+                // Optionally calculate inSampleSize to avoid OOM for large images
+                bitmap = androidBitmap?.asImageBitmap()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // Consider handling error state
+            }
+        }
+    }
+    return bitmap
 }

@@ -9,6 +9,9 @@ interface InviteeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertInvitee(invitee: Invitee): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertInvitees(invitees: List<Invitee>)
+
     @Query("SELECT * FROM invitees WHERE eventId = :eventId")
     suspend fun getInviteesForEvent(eventId: Int): List<Invitee>
 }

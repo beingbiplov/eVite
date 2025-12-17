@@ -13,8 +13,11 @@ import kotlinx.coroutines.launch
 class EventViewModel(application: Application) : AndroidViewModel(application) {
 
     // Initialize database and repository for data persistence
-    private val eventDao = DatabaseProvider.getDatabase(application).eventDao()
-    private val repository = EventRepository(eventDao)
+    // Initialize database and repository for data persistence
+    private val db = DatabaseProvider.getDatabase(application)
+    private val eventDao = db.eventDao()
+    private val inviteeDao = db.inviteeDao()
+    private val repository = EventRepository(eventDao, inviteeDao)
 
     // Hold form input values that user enters
     val eventTitle = MutableStateFlow("")
@@ -22,6 +25,7 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
     val eventDate = MutableStateFlow("")
     val eventLocation = MutableStateFlow("")
     val eventTheme = MutableStateFlow("Party")
+    val eventImageUri = MutableStateFlow<String?>(null)
 
     // Track save operation status (success or error message)
     private val _creationState = MutableStateFlow<String?>(null)
@@ -48,11 +52,12 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
                 description = eventDescription.value,
                 dateTime = eventDate.value,
                 location = eventLocation.value,
-                theme = eventTheme.value
+                theme = eventTheme.value,
+                imageUri = eventImageUri.value
             )
 
-            // Save event to database through repository
-            repository.createEvent(newEvent)
+            // Save event AND invitees to database transactionally
+            repository.createEventWithInvitees(newEvent, _temporaryInvitees.value)
 
             // Notify UI that save completed successfully
             _creationState.value = "success"

@@ -7,7 +7,7 @@ import com.example.evite.data.local.entities.*
 
 @Database(
     entities = [User::class, Event::class, Invitee::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
