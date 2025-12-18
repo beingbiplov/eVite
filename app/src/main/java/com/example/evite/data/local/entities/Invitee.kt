@@ -8,5 +8,6 @@ data class Invitee(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val eventId: Int,       // foreign key to Event.id
     val name: String?,
-    val email: String
+    val email: String,
+    val status: String = "Pending"  // Accepted, Pending, Declined
 )
