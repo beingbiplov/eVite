@@ -60,6 +60,31 @@ class EventRepository(
     }
 
     // -------------------------------------------------------
+    // Update
+    // -------------------------------------------------------
+    suspend fun updateEvent(event: Event) {
+        eventDao.updateEvent(event)
+    }
+
+    /**
+     * Updates event and its invitees.
+     * 1. Updates event details.
+     * 2. Deletes existing invitees for that event.
+     * 3. Inserts the new list of invitees.
+     */
+    suspend fun updateEventWithInvitees(event: Event, invitees: List<com.example.evite.data.local.entities.Invitee>) {
+        eventDao.updateEvent(event)
+        
+        if (inviteeDao != null) {
+            inviteeDao.deleteInviteesForEvent(event.id)
+            if (invitees.isNotEmpty()) {
+                val updatedInvitees = invitees.map { it.copy(eventId = event.id) }
+                inviteeDao.insertInvitees(updatedInvitees)
+            }
+        }
+    }
+
+    // -------------------------------------------------------
     // Delete
     // -------------------------------------------------------
     suspend fun deleteEvent(event: Event) {

@@ -4,7 +4,9 @@ sealed class NavRoutes(val route: String) {
 
     object Home : NavRoutes("home")
     object EventsList : NavRoutes("events_list")
-    object CreateEvent : NavRoutes("create_event")
+    object CreateEvent : NavRoutes("create_event?eventId={eventId}") {
+        fun createRoute(eventId: Int? = null) = if (eventId != null) "create_event?eventId=$eventId" else "create_event"
+    }
     object EventDetails : NavRoutes("event_details/{eventId}") {
         fun createRoute(eventId: Int) = "event_details/$eventId"
     }

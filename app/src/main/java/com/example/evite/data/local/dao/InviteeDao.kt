@@ -14,4 +14,7 @@ interface InviteeDao {
 
     @Query("SELECT * FROM invitees WHERE eventId = :eventId")
     suspend fun getInviteesForEvent(eventId: Int): List<Invitee>
+
+    @Query("DELETE FROM invitees WHERE eventId = :eventId")
+    suspend fun deleteInviteesForEvent(eventId: Int)
 }

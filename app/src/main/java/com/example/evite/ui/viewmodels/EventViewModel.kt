@@ -26,10 +26,35 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
     val eventLocation = MutableStateFlow("")
     val eventTheme = MutableStateFlow("Party")
     val eventImageUri = MutableStateFlow<String?>(null)
+    
+    // Track if we are editing an existing event
+    private val currentEventId = MutableStateFlow<Int?>(null)
 
     // Track save operation status (success or error message)
     private val _creationState = MutableStateFlow<String?>(null)
     val creationState = _creationState.asStateFlow()
+
+    /**
+     * Loads an existing event into the form fields.
+     */
+    fun loadEventForEdit(eventId: Int) {
+        viewModelScope.launch {
+            val event = repository.getEvent(eventId)
+            if (event != null) {
+                currentEventId.value = event.id
+                eventTitle.value = event.title
+                eventDescription.value = event.description
+                eventDate.value = event.dateTime
+                eventLocation.value = event.location
+                eventTheme.value = event.theme
+                eventImageUri.value = event.imageUri
+                
+                // Also load invitees
+                val invitees = repository.getEventInvitees(eventId)
+                _temporaryInvitees.value = invitees
+            }
+        }
+    }
 
     fun saveEvent() {
         viewModelScope.launch {
@@ -46,18 +71,31 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
             _creationState.value = "loading"
             kotlinx.coroutines.delay(1000) // Simulate processing
 
-            // Package all form data into Event object
-            val newEvent = Event(
-                title = eventTitle.value,
-                description = eventDescription.value,
-                dateTime = eventDate.value,
-                location = eventLocation.value,
-                theme = eventTheme.value,
-                imageUri = eventImageUri.value
-            )
-
-            // Save event AND invitees to database transactionally
-            repository.createEventWithInvitees(newEvent, _temporaryInvitees.value)
+            val eventId = currentEventId.value
+            if (eventId != null) {
+                // UPDATE existing event
+                val updatedEvent = Event(
+                    id = eventId,
+                    title = eventTitle.value,
+                    description = eventDescription.value,
+                    dateTime = eventDate.value,
+                    location = eventLocation.value,
+                    theme = eventTheme.value,
+                    imageUri = eventImageUri.value
+                )
+                repository.updateEventWithInvitees(updatedEvent, _temporaryInvitees.value)
+            } else {
+                // CREATE new event
+                val newEvent = Event(
+                    title = eventTitle.value,
+                    description = eventDescription.value,
+                    dateTime = eventDate.value,
+                    location = eventLocation.value,
+                    theme = eventTheme.value,
+                    imageUri = eventImageUri.value
+                )
+                repository.createEventWithInvitees(newEvent, _temporaryInvitees.value)
+            }
 
             // Notify UI that save completed successfully
             _creationState.value = "success"
@@ -80,11 +118,13 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetState() {
         // Clear all form fields back to defaults
+        currentEventId.value = null
         eventTitle.value = ""
         eventDescription.value = ""
         eventDate.value = ""
         eventLocation.value = ""
         eventTheme.value = "Party"
+        eventImageUri.value = null
         _temporaryInvitees.value = emptyList() // Clear invitees
         _creationState.value = null
     }

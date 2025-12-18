@@ -75,19 +75,24 @@ fun AppNavHost(
             }
         }
 
-        // -------------------- CREATE EVENT -------------------------
-        composable(NavRoutes.CreateEvent.route) {
+        // -------------------- CREATE EVENT (used for Edit too) -------------------------
+        composable(
+            route = NavRoutes.CreateEvent.route,
+            arguments = listOf(navArgument("eventId") { 
+                type = NavType.StringType // Use StringType for optional query param to avoid crash if null
+                nullable = true
+                defaultValue = null 
+            })
+        ) { backStackEntry ->
+            val eventIdString = backStackEntry.arguments?.getString("eventId")
+            val eventId = eventIdString?.toIntOrNull()
+
             if (!isLoggedIn) {
                 navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
             } else {
                 CreateEventScreen(
+                    eventId = eventId,
                     onEventCreated = {
-                        // After creating event, maybe go home or details?
-                        // User previously said "route to add email page" after save,
-                        // but now implies "add invitee" button does that.
-                        // For now keep previous logic or just pop back to Home as per latest conversation hint "return into home".
-                        // Wait, user said "save event button clicked... return into home". 
-                        // So I will change this to popBackStack which goes to Home.
                         navController.popBackStack()
                     },
                     onBack = {
@@ -154,7 +159,10 @@ fun AppNavHost(
             } else {
                 EventDetailsScreen(
                     eventId = eventId,
-                    onBackClick = { navController.popBackStack() }
+                    onBackClick = { navController.popBackStack() },
+                    onEditClick = { event ->
+                        navController.navigate(NavRoutes.CreateEvent.createRoute(event.id))
+                    }
                 )
             }
         }

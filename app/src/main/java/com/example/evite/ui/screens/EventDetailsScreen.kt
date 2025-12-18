@@ -29,6 +29,7 @@ import com.example.evite.data.local.entities.Invitee
 import com.example.evite.ui.viewmodels.EventDetailsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.example.evite.navigation.NavRoutes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

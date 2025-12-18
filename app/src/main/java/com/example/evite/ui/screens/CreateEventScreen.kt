@@ -47,6 +47,7 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateEventScreen(
+    eventId: Int? = null,
     onEventCreated: () -> Unit,
     onBack: () -> Unit,
     onAddInviteeClick: () -> Unit,
@@ -69,6 +70,15 @@ fun CreateEventScreen(
     // Modal State
     var showAddInviteeDialog by remember { mutableStateOf(false) }
     
+    // Initialize editing if eventId is provided
+    LaunchedEffect(eventId) {
+        if (eventId != null) {
+            viewModel.loadEventForEdit(eventId)
+        } else {
+            viewModel.resetState()
+        }
+    }
+
     // Navigate back when save succeeds
     LaunchedEffect(creationState) {
         if (creationState == "success") {
@@ -108,7 +118,7 @@ fun CreateEventScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Create Event", fontWeight = FontWeight.Bold) },
+                title = { Text(if (eventId != null) "Edit Event" else "Create Event", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
