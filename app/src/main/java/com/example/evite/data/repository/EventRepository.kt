@@ -3,6 +3,8 @@ package com.example.evite.data.repository
 import com.example.evite.data.local.dao.EventDao
 import com.example.evite.data.local.entities.Event
 
+import kotlinx.coroutines.flow.Flow
+
 /**
  * EventRepository
  * 
@@ -37,9 +39,9 @@ class EventRepository(
     }
 
     // -------------------------------------------------------
-    // Read (All)
+    // Read (All) - REACTIVE
     // -------------------------------------------------------
-    suspend fun getEvents(): List<Event> {
+    fun getEvents(): Flow<List<Event>> {
         return eventDao.getAllEvents()
     }
 
@@ -48,5 +50,19 @@ class EventRepository(
     // -------------------------------------------------------
     suspend fun getEvent(id: Int): Event? {
         return eventDao.getEventById(id)
+    }
+
+    // -------------------------------------------------------
+    // Get Invitees for Event
+    // -------------------------------------------------------
+    suspend fun getEventInvitees(eventId: Int): List<com.example.evite.data.local.entities.Invitee> {
+        return inviteeDao?.getInviteesForEvent(eventId) ?: emptyList()
+    }
+
+    // -------------------------------------------------------
+    // Delete
+    // -------------------------------------------------------
+    suspend fun deleteEvent(event: Event) {
+        eventDao.deleteEvent(event)
     }
 }

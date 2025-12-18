@@ -117,13 +117,13 @@ fun CreateEventScreen(
             )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
+        Box(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
             // SINGLE Scrollable Column
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 0.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -449,8 +449,6 @@ fun CreateEventScreen(
                         }
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(24.dp)) // Extra space at very bottom
             }
             
             // Full screen loading overlay
