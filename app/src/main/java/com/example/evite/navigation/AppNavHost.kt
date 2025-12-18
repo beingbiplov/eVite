@@ -5,7 +5,9 @@ import com.example.evite.ui.screens.*
 import androidx.navigation.compose.NavHost
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import androidx.compose.runtime.collectAsState
 import com.example.evite.ui.viewmodels.UserViewModel
 
@@ -67,8 +69,7 @@ fun AppNavHost(
                         navController.navigate(NavRoutes.CreateEvent.route)
                     },
                     onEventClick = { event ->
-                        // TODO: Navigate to Event Details screen
-                        // navController.navigate("${NavRoutes.EventDetails.route}/${event.id}")
+                        navController.navigate(NavRoutes.EventDetails.createRoute(event.id))
                     }
                 )
             }
@@ -140,6 +141,22 @@ fun AppNavHost(
                 viewModel = userViewModel,
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        // -------------------- EVENT DETAILS -------------------------
+        composable(
+            route = NavRoutes.EventDetails.route,
+            arguments = listOf(navArgument("eventId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getInt("eventId") ?: 0
+            if (!isLoggedIn) {
+                navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
+            } else {
+                EventDetailsScreen(
+                    eventId = eventId,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
         }
 
     }
