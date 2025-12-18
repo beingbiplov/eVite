@@ -71,7 +71,7 @@ fun EventDetailsScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
+                        .padding(top = paddingValues.calculateTopPadding())
                 ) {
                     item {
                         // Event Image
@@ -226,8 +226,6 @@ fun EventDetailsScreen(
                                 )
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(32.dp))
                     }
                 }
             }
