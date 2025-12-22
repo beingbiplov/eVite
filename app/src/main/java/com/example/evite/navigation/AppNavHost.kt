@@ -5,7 +5,9 @@ import com.example.evite.ui.screens.*
 import androidx.navigation.compose.NavHost
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import androidx.compose.runtime.collectAsState
 import com.example.evite.ui.viewmodels.UserViewModel
 
@@ -65,19 +67,54 @@ fun AppNavHost(
                     },
                     onCreateEventClick = {
                         navController.navigate(NavRoutes.CreateEvent.route)
+                    },
+                    onEventClick = { event ->
+                        navController.navigate(NavRoutes.EventDetails.createRoute(event.id))
                     }
                 )
             }
         }
 
-        // -------------------- CREATE EVENT -------------------------
-        composable(NavRoutes.CreateEvent.route) {
+        // -------------------- CREATE EVENT (used for Edit too) -------------------------
+        composable(
+            route = NavRoutes.CreateEvent.route,
+            arguments = listOf(navArgument("eventId") { 
+                type = NavType.StringType // Use StringType for optional query param to avoid crash if null
+                nullable = true
+                defaultValue = null 
+            })
+        ) { backStackEntry ->
+            val eventIdString = backStackEntry.arguments?.getString("eventId")
+            val eventId = eventIdString?.toIntOrNull()
+
             if (!isLoggedIn) {
                 navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
             } else {
                 CreateEventScreen(
+                    eventId = eventId,
                     onEventCreated = {
                         navController.popBackStack()
+                    },
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onAddInviteeClick = {
+                         navController.navigate(NavRoutes.AddEmails.route)
+                    }
+                )
+            }
+        }
+
+        // -------------------- ADD EMAILS -------------------------
+        composable(NavRoutes.AddEmails.route) {
+            if (!isLoggedIn) {
+                navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
+            } else {
+                SendInviteScreen(
+                    onBack = { navController.popBackStack() },
+                    onInvite = { email, name ->
+                         // TODO: Handle adding invitee to ViewModel list
+                         navController.popBackStack()
                     }
                 )
             }
@@ -109,6 +146,25 @@ fun AppNavHost(
                 viewModel = userViewModel,
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        // -------------------- EVENT DETAILS -------------------------
+        composable(
+            route = NavRoutes.EventDetails.route,
+            arguments = listOf(navArgument("eventId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getInt("eventId") ?: 0
+            if (!isLoggedIn) {
+                navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
+            } else {
+                EventDetailsScreen(
+                    eventId = eventId,
+                    onBackClick = { navController.popBackStack() },
+                    onEditClick = { event ->
+                        navController.navigate(NavRoutes.CreateEvent.createRoute(event.id))
+                    }
+                )
+            }
         }
 
     }

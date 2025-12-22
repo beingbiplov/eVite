@@ -13,8 +13,11 @@ import kotlinx.coroutines.launch
 class EventViewModel(application: Application) : AndroidViewModel(application) {
 
     // Initialize database and repository for data persistence
-    private val eventDao = DatabaseProvider.getDatabase(application).eventDao()
-    private val repository = EventRepository(eventDao)
+    // Initialize database and repository for data persistence
+    private val db = DatabaseProvider.getDatabase(application)
+    private val eventDao = db.eventDao()
+    private val inviteeDao = db.inviteeDao()
+    private val repository = EventRepository(eventDao, inviteeDao)
 
     // Hold form input values that user enters
     val eventTitle = MutableStateFlow("")
@@ -22,10 +25,36 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
     val eventDate = MutableStateFlow("")
     val eventLocation = MutableStateFlow("")
     val eventTheme = MutableStateFlow("Party")
+    val eventImageUri = MutableStateFlow<String?>(null)
+    
+    // Track if we are editing an existing event
+    private val currentEventId = MutableStateFlow<Int?>(null)
 
     // Track save operation status (success or error message)
     private val _creationState = MutableStateFlow<String?>(null)
     val creationState = _creationState.asStateFlow()
+
+    /**
+     * Loads an existing event into the form fields.
+     */
+    fun loadEventForEdit(eventId: Int) {
+        viewModelScope.launch {
+            val event = repository.getEvent(eventId)
+            if (event != null) {
+                currentEventId.value = event.id
+                eventTitle.value = event.title
+                eventDescription.value = event.description
+                eventDate.value = event.dateTime
+                eventLocation.value = event.location
+                eventTheme.value = event.theme
+                eventImageUri.value = event.imageUri
+                
+                // Also load invitees
+                val invitees = repository.getEventInvitees(eventId)
+                _temporaryInvitees.value = invitees
+            }
+        }
+    }
 
     fun saveEvent() {
         viewModelScope.launch {
@@ -39,30 +68,64 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
-            // Package all form data into Event object
-            val newEvent = Event(
-                title = eventTitle.value,
-                description = eventDescription.value,
-                dateTime = eventDate.value,
-                location = eventLocation.value,
-                theme = eventTheme.value
-            )
+            _creationState.value = "loading"
+            kotlinx.coroutines.delay(1000) // Simulate processing
 
-            // Save event to database through repository
-            repository.createEvent(newEvent)
+            val eventId = currentEventId.value
+            if (eventId != null) {
+                // UPDATE existing event
+                val updatedEvent = Event(
+                    id = eventId,
+                    title = eventTitle.value,
+                    description = eventDescription.value,
+                    dateTime = eventDate.value,
+                    location = eventLocation.value,
+                    theme = eventTheme.value,
+                    imageUri = eventImageUri.value
+                )
+                repository.updateEventWithInvitees(updatedEvent, _temporaryInvitees.value)
+            } else {
+                // CREATE new event
+                val newEvent = Event(
+                    title = eventTitle.value,
+                    description = eventDescription.value,
+                    dateTime = eventDate.value,
+                    location = eventLocation.value,
+                    theme = eventTheme.value,
+                    imageUri = eventImageUri.value
+                )
+                repository.createEventWithInvitees(newEvent, _temporaryInvitees.value)
+            }
 
             // Notify UI that save completed successfully
             _creationState.value = "success"
         }
     }
 
+    // List of invitees added temporarily before saving
+    private val _temporaryInvitees = MutableStateFlow<List<com.example.evite.data.local.entities.Invitee>>(emptyList())
+    val temporaryInvitees = _temporaryInvitees.asStateFlow()
+
+    fun addTemporaryInvitee(name: String?, email: String) {
+        // Use update to safely modify key state
+        val newInvitee = com.example.evite.data.local.entities.Invitee(eventId = 0, name = name, email = email)
+        _temporaryInvitees.value = _temporaryInvitees.value + newInvitee
+    }
+
+    fun removeTemporaryInvitee(invitee: com.example.evite.data.local.entities.Invitee) {
+        _temporaryInvitees.value = _temporaryInvitees.value - invitee
+    }
+
     fun resetState() {
         // Clear all form fields back to defaults
+        currentEventId.value = null
         eventTitle.value = ""
         eventDescription.value = ""
         eventDate.value = ""
         eventLocation.value = ""
         eventTheme.value = "Party"
+        eventImageUri.value = null
+        _temporaryInvitees.value = emptyList() // Clear invitees
         _creationState.value = null
     }
 }
