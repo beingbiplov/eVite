@@ -1,14 +1,10 @@
 package com.example.evite.navigation
 
+import androidx.navigation.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.*
 import com.example.evite.ui.screens.*
-import androidx.navigation.compose.NavHost
-import androidx.compose.runtime.Composable
-import androidx.navigation.NavHostController
-import androidx.navigation.NavType
-import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import androidx.compose.runtime.collectAsState
 import com.example.evite.ui.viewmodels.UserViewModel
 
 @Composable
@@ -17,11 +13,20 @@ fun AppNavHost(
     userViewModel: UserViewModel,
     modifier: Modifier = Modifier
 ) {
-    val isLoggedIn = userViewModel.isLoggedIn.collectAsState().value
+    val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
+
+    // Auto redirect after login
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            navController.navigate(NavRoutes.Home.route) {
+                popUpTo(NavRoutes.Login.route) { inclusive = true }
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
-        startDestination = if (isLoggedIn) NavRoutes.Home.route else NavRoutes.Login.route,
+        startDestination = NavRoutes.Login.route,
         modifier = modifier
     ) {
 
@@ -29,11 +34,7 @@ fun AppNavHost(
         composable(NavRoutes.Login.route) {
             LoginScreen(
                 viewModel = userViewModel,
-                onLoginSuccess = {
-                    navController.navigate(NavRoutes.Home.route) {
-                        popUpTo(NavRoutes.Login.route) { inclusive = true }
-                    }
-                },
+                onLoginSuccess = {},
                 onRegisterClick = {
                     navController.navigate(NavRoutes.Register.route)
                 }
@@ -53,17 +54,13 @@ fun AppNavHost(
             )
         }
 
-        // -------------------- HOME (protected) -------------------------
+        // -------------------- HOME -------------------------
         composable(NavRoutes.Home.route) {
-            if (!isLoggedIn) {
-                navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
-            } else {
+            RequireAuth(navController, isLoggedIn) {
                 HomeScreen(
                     onLogout = {
                         userViewModel.logout()
-                        navController.navigate(NavRoutes.Login.route) {
-                            popUpTo(0)
-                        }
+                        navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
                     },
                     onCreateEventClick = {
                         navController.navigate(NavRoutes.CreateEvent.route)
@@ -75,31 +72,26 @@ fun AppNavHost(
             }
         }
 
-        // -------------------- CREATE EVENT (used for Edit too) -------------------------
+        // -------------------- CREATE EVENT -------------------------
         composable(
             route = NavRoutes.CreateEvent.route,
-            arguments = listOf(navArgument("eventId") { 
-                type = NavType.StringType // Use StringType for optional query param to avoid crash if null
-                nullable = true
-                defaultValue = null 
-            })
+            arguments = listOf(
+                navArgument("eventId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
         ) { backStackEntry ->
-            val eventIdString = backStackEntry.arguments?.getString("eventId")
-            val eventId = eventIdString?.toIntOrNull()
+            val eventId = backStackEntry.arguments?.getString("eventId")?.toIntOrNull()
 
-            if (!isLoggedIn) {
-                navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
-            } else {
+            RequireAuth(navController, isLoggedIn) {
                 CreateEventScreen(
                     eventId = eventId,
-                    onEventCreated = {
-                        navController.popBackStack()
-                    },
-                    onBack = {
-                        navController.popBackStack()
-                    },
+                    onEventCreated = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() },
                     onAddInviteeClick = {
-                         navController.navigate(NavRoutes.AddEmails.route)
+                        navController.navigate(NavRoutes.AddEmails.route)
                     }
                 )
             }
@@ -107,14 +99,11 @@ fun AppNavHost(
 
         // -------------------- ADD EMAILS -------------------------
         composable(NavRoutes.AddEmails.route) {
-            if (!isLoggedIn) {
-                navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
-            } else {
+            RequireAuth(navController, isLoggedIn) {
                 SendInviteScreen(
                     onBack = { navController.popBackStack() },
-                    onInvite = { email, name ->
-                         // TODO: Handle adding invitee to ViewModel list
-                         navController.popBackStack()
+                    onInvite = { _, _ ->
+                        navController.popBackStack()
                     }
                 )
             }
@@ -122,16 +111,12 @@ fun AppNavHost(
 
         // -------------------- PROFILE -------------------------
         composable(NavRoutes.Profile.route) {
-            if (!isLoggedIn) {
-                navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
-            } else {
+            RequireAuth(navController, isLoggedIn) {
                 ProfileScreen(
                     viewModel = userViewModel,
                     onLogout = {
                         userViewModel.logout()
-                        navController.navigate(NavRoutes.Login.route) {
-                            popUpTo(0)
-                        }
+                        navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
                     },
                     onEditProfile = {
                         navController.navigate("edit_profile")
@@ -140,12 +125,14 @@ fun AppNavHost(
             }
         }
 
-        // -------------------- PROFILE UPDATE -------------------------
+        // -------------------- EDIT PROFILE -------------------------
         composable("edit_profile") {
-            EditProfileScreen(
-                viewModel = userViewModel,
-                onBack = { navController.popBackStack() }
-            )
+            RequireAuth(navController, isLoggedIn) {
+                EditProfileScreen(
+                    viewModel = userViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         // -------------------- EVENT DETAILS -------------------------
@@ -154,9 +141,8 @@ fun AppNavHost(
             arguments = listOf(navArgument("eventId") { type = NavType.IntType })
         ) { backStackEntry ->
             val eventId = backStackEntry.arguments?.getInt("eventId") ?: 0
-            if (!isLoggedIn) {
-                navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
-            } else {
+
+            RequireAuth(navController, isLoggedIn) {
                 EventDetailsScreen(
                     eventId = eventId,
                     onBackClick = { navController.popBackStack() },
@@ -166,6 +152,5 @@ fun AppNavHost(
                 )
             }
         }
-
     }
 }
