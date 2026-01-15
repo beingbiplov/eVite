@@ -24,6 +24,7 @@ fun RegisterScreen(
 
     LaunchedEffect(registerState) {
         if (registerState == "success") {
+            viewModel.clearRegisterState()
             onRegisterSuccess()
         }
     }
@@ -74,7 +75,7 @@ fun RegisterScreen(
             Text(registerState ?: "", color = MaterialTheme.colorScheme.error)
         }
 
-        TextButton(onClick = onBackToLogin) {
+        TextButton(onClick = { viewModel.clearRegisterState(); onBackToLogin() }) {
             Text("Back to Login")
         }
     }

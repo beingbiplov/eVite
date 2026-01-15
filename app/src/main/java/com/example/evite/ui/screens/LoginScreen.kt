@@ -23,6 +23,7 @@ fun LoginScreen(
 
     LaunchedEffect(loginState) {
         if (loginState == "success") {
+            viewModel.clearLoginState()
             onLoginSuccess()
         }
     }
@@ -74,7 +75,10 @@ fun LoginScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            TextButton(onClick = onRegisterClick) {
+            TextButton(onClick = {
+                viewModel.clearLoginState()
+                onRegisterClick()
+            }) {
                 Text("Create an account")
             }
         }

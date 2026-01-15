@@ -18,7 +18,9 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     private val userDao = DatabaseProvider.getDatabase(application).userDao()
     private val repo = UserRepository(userDao)
 
-    val loginState = MutableStateFlow<String?>(null)
+    private val _loginState = MutableStateFlow<String?>(null)
+    val loginState = _loginState.asStateFlow()
+    
     val isLoading = MutableStateFlow(false)
 
     private val _registerState = MutableStateFlow<String?>(null)
@@ -28,11 +30,18 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
 
     val loggedInUser = MutableStateFlow<User?>(null)
 
+    fun clearLoginState() {
+        _loginState.value = null
+    }
+
+    fun clearRegisterState() {
+        _registerState.value = null
+    }
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
             if (!ValidationUtil.isValidEmail(email)) {
-                loginState.value = "Invalid email format"
+                _loginState.value = "Invalid email format"
                 return@launch
             }
 
@@ -44,18 +53,18 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
             isLoading.value = false
 
             if (user != null) {
-                loginState.value = "success"
+                _loginState.value = "success"
                 isLoggedIn.value = true
                 loggedInUser.value = user
             } else {
-                loginState.value = "Invalid email or password"
+                _loginState.value = "Invalid email or password"
             }
         }
     }
 
     fun logout() {
         Log.d("UserViewModel", "Logging out. User was ${loggedInUser.value?.email}")
-        loginState.value = null
+        _loginState.value = null
         isLoggedIn.value = false
         loggedInUser.value = null
     }
