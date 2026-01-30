@@ -21,8 +21,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            EviteApp()
+            com.example.evite.ui.theme.EViteTheme {
+                EviteApp()
+            }
         }
+
     }
 }
 

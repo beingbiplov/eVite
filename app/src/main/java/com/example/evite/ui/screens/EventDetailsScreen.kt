@@ -27,18 +27,25 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.evite.data.local.entities.Event
 import com.example.evite.data.local.entities.Invitee
 import com.example.evite.ui.viewmodels.EventDetailsViewModel
+import com.example.evite.ui.viewmodels.EventDetailsViewModelFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.example.evite.navigation.NavRoutes
+import com.example.evite.ui.theme.getThemeStyle
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.foundation.BorderStroke
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventDetailsScreen(
     eventId: Int,
+    currentUserId: Int,
     onBackClick: () -> Unit = {},
     onEditClick: (Event) -> Unit = {},
     onDeleteClick: (Event) -> Unit = {},
-    viewModel: EventDetailsViewModel = viewModel()
+    viewModel: EventDetailsViewModel = viewModel(factory = EventDetailsViewModelFactory(LocalContext.current.applicationContext as android.app.Application, currentUserId))
 ) {
     val event by viewModel.event.collectAsState()
     val invitees by viewModel.invitees.collectAsState()
@@ -48,184 +55,224 @@ fun EventDetailsScreen(
         viewModel.loadEvent(eventId)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { },
-                    navigationIcon = {
-                        IconButton(onClick = onBackClick) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent
-                    )
-                )
-            }
-        ) { paddingValues ->
-            event?.let { currentEvent ->
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = paddingValues.calculateTopPadding())
-                ) {
-                    item {
-                        // Event Image
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        event?.let { currentEvent ->
+            val (themeColors, themeIcon) = getThemeStyle(currentEvent.theme)
+            
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 32.dp)
+            ) {
+                // Immersive Header Section
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().height(360.dp)) {
                         EventImageSection(currentEvent)
+                        
+                        // Action buttons on top of image
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 40.dp, start = 16.dp, end = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                onClick = onBackClick,
+                                shape = CircleShape,
+                                color = Color.Black.copy(alpha = 0.3f),
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowBack,
+                                        contentDescription = "Back",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Surface(
+                                    onClick = { onEditClick(currentEvent) },
+                                    shape = CircleShape,
+                                    color = Color.Black.copy(alpha = 0.3f),
+                                    modifier = Modifier.size(44.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                                Surface(
+                                    onClick = { 
+                                        viewModel.deleteEvent(currentEvent) {
+                                            onBackClick()
+                                        }
+                                    },
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(44.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Delete",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Gradient fading upwards from content
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Transparent,
+                                            MaterialTheme.colorScheme.background.copy(alpha = 0.6f),
+                                            MaterialTheme.colorScheme.background
+                                        ),
+                                        startY = 150f
+                                    )
+                                )
+                        )
+
+                        // Icon Chip overlapping image and content
+                        Surface(
+                            shape = RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(start = 24.dp, bottom = 0.dp)
+                                .size(80.dp),
+                            tonalElevation = 8.dp,
+                            shadowElevation = 8.dp,
+                            border = BorderStroke(2.dp, themeColors.first().copy(alpha = 0.5f))
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = themeIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(40.dp),
+                                    tint = themeColors.first()
+                                )
+                            }
+                        }
                     }
+                }
 
-                    item {
-                        Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                            Spacer(modifier = Modifier.height(16.dp))
+                item {
+                    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
+                        Text(
+                            text = currentEvent.title,
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
 
-                            // Event Title
-                            Text(
-                                text = currentEvent.title,
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // Event Description
+                        // Description Box
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             Text(
                                 text = currentEvent.description,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                lineHeight = MaterialTheme.typography.bodyLarge.lineHeight.times(1.3f)
+                                modifier = Modifier.padding(16.dp),
+                                lineHeight = MaterialTheme.typography.bodyLarge.lineHeight.times(1.4f)
                             )
-
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            // Event Information Section
-                            Text(
-                                text = "Event Information",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // Date & Time
-                            EventInfoRow(
-                                icon = Icons.Default.Schedule,
-                                title = "Date & Time",
-                                content = currentEvent.dateTime
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // Location
-                            EventInfoRow(
-                                icon = Icons.Default.LocationOn,
-                                title = "Location",
-                                content = currentEvent.location
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // Theme
-                            EventInfoRow(
-                                icon = Icons.Default.Style,
-                                title = "Theme",
-                                content = currentEvent.theme
-                            )
-
-                            Spacer(modifier = Modifier.height(32.dp))
-
-                            // Invitees Section
-                            Text(
-                                text = "Invitees",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
                         }
-                    }
 
-                    // Invitees List
-                    items(invitees) { invitee ->
-                        InviteeItem(
-                            invitee = invitee,
-                            modifier = Modifier.padding(horizontal = 24.dp)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-
-                    item {
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        // Action Buttons
-                        Column(
-                            modifier = Modifier.padding(horizontal = 24.dp)
-                        ) {
-                            // Edit Event Button
-                            Button(
-                                onClick = { onEditClick(currentEvent) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(50.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    "Edit Event",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
+                        Text(
+                            text = "Event Details",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                            // Delete Event Button
-                            OutlinedButton(
-                                onClick = { 
-                                    viewModel.deleteEvent(currentEvent) {
-                                        onBackClick()
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(50.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error
-                                ),
-                                border = ButtonDefaults.outlinedButtonBorder.copy(
-                                    brush = androidx.compose.ui.graphics.SolidColor(
-                                        MaterialTheme.colorScheme.error
-                                    )
-                                )
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    "Delete Event",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
+                        // Info Cards grid
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            InfoItemCard(
+                                modifier = Modifier.weight(1f),
+                                icon = Icons.Default.CalendarMonth,
+                                title = "Date",
+                                value = currentEvent.dateTime.split(" ").firstOrNull() ?: currentEvent.dateTime,
+                                color = themeColors.first()
+                            )
+                            InfoItemCard(
+                                modifier = Modifier.weight(1f),
+                                icon = Icons.Default.Schedule,
+                                title = "Time",
+                                value = currentEvent.dateTime.split(" ").lastOrNull() ?: "",
+                                color = themeColors.first()
+                            )
                         }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        InfoItemCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            icon = Icons.Default.Place,
+                            title = "Location",
+                            value = currentEvent.location,
+                            color = themeColors.first()
+                        )
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        Text(
+                            text = "Guest List (${invitees.size})",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+
+                // Invitees List
+                if (invitees.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .height(100.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                                    RoundedCornerShape(16.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "No invitees yet",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else {
+                    items(invitees) { invitee ->
+                        InviteeRow(invitee)
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
             }
@@ -235,8 +282,7 @@ fun EventDetailsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .clickable(enabled = false) { },
+                    .background(Color.Black.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -246,150 +292,156 @@ fun EventDetailsScreen(
 }
 
 @Composable
-fun EventImageSection(event: Event) {
-    val context = LocalContext.current
-    var bitmap by remember(event.imageUri) { 
-        mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) 
+fun InfoItemCard(
+    modifier: Modifier = Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    value: String,
+    color: Color
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        border = BorderStroke(1.dp, color.copy(alpha = 0.1f))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+            }
+        }
     }
+}
 
-    // Load image if URI is provided
-    LaunchedEffect(event.imageUri) {
-        if (event.imageUri != null) {
+@Composable
+fun InviteeRow(invitee: Invitee) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Personalized Avatar
+            val initials = (invitee.name?.firstOrNull() ?: invitee.email.firstOrNull())?.uppercase() ?: "?"
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = initials,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = invitee.name ?: invitee.email,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = invitee.email,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Status chip
+            val statusColor = when (invitee.status.lowercase()) {
+                "accepted" -> Color(0xFF10B981)
+                "declined" -> Color(0xFFEF4444)
+                else -> Color(0xFFF59E0B)
+            }
+            
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = statusColor.copy(alpha = 0.1f),
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Text(
+                    text = invitee.status,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = statusColor,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun EventImageSection(event: Event) {
+    if (event.imageUri != null) {
+        val context = LocalContext.current
+        var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+        LaunchedEffect(event.imageUri) {
             withContext(Dispatchers.IO) {
                 try {
                     val uri = Uri.parse(event.imageUri)
                     val inputStream = context.contentResolver.openInputStream(uri)
-                    val androidBitmap = BitmapFactory.decodeStream(inputStream)
-                    bitmap = androidBitmap?.asImageBitmap()
+                    bitmap = BitmapFactory.decodeStream(inputStream)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
             }
         }
-    }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(280.dp)
-    ) {
-        if (bitmap != null) {
+        bitmap?.let {
             Image(
-                bitmap = bitmap!!,
-                contentDescription = event.title,
-                modifier = Modifier.fillMaxSize(),
+                bitmap = it.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(400.dp),
                 contentScale = ContentScale.Crop
             )
-        } else {
-            // Placeholder with gradient
-            val (gradientColors, _) = getThemeStyle(event.theme)
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                            colors = gradientColors
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Event,
-                    contentDescription = null,
-                    modifier = Modifier.size(80.dp),
-                    tint = Color.White.copy(alpha = 0.7f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun EventInfoRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    content: String
-) {
-    Row(
-        verticalAlignment = Alignment.Top,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(24.dp)
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = content,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
-
-@Composable
-fun InviteeItem(
-    invitee: Invitee,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Avatar with initial
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.size(48.dp)
+        } ?: Box(
+            modifier = Modifier.fillMaxWidth().height(400.dp).background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Text(
-                    text = (invitee.name?.firstOrNull() ?: invitee.email.firstOrNull())
-                        ?.uppercase() ?: "?",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
+            Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
         }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // Name and Status
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = invitee.name ?: invitee.email,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = invitee.status,
-                style = MaterialTheme.typography.bodyMedium,
-                color = when (invitee.status.lowercase()) {
-                    "accepted" -> Color(0xFF4CAF50)
-                    "declined" -> Color(0xFFF44336)
-                    else -> Color(0xFFFF9800)
-                },
-                fontWeight = FontWeight.SemiBold
-            )
+    } else {
+        Box(
+            modifier = Modifier.fillMaxWidth().height(400.dp).background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
         }
     }
 }

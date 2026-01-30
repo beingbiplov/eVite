@@ -68,7 +68,7 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             if (!ValidationUtil.isValidPassword(password)) {
-                _registerState.value = "Password must be at least 8 characters and contain a number"
+                _registerState.value = "Password must be at least 6 characters and contain at least one number"
                 return@launch
             }
 

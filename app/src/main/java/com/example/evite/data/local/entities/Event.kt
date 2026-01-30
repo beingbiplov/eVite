@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "events")
 data class Event(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val userId: Int,        // Foreign key to User.id for data isolation
     val title: String,
     val description: String,
     val dateTime: String,

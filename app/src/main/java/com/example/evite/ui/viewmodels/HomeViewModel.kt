@@ -11,14 +11,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
+class HomeViewModel(application: Application, private val currentUserId: Int) : AndroidViewModel(application) {
 
     private val db = DatabaseProvider.getDatabase(application)
     private val eventDao = db.eventDao()
     private val repository = EventRepository(eventDao)
 
     // Using stateIn to convert Flow to StateFlow automatically
-    val events: StateFlow<List<Event>> = repository.getEvents()
+    // Now filters events by current user for data isolation
+    val events: StateFlow<List<Event>> = repository.getEventsByUser(currentUserId)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

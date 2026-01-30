@@ -58,20 +58,24 @@ fun AppNavHost(
             if (!isLoggedIn) {
                 navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
             } else {
-                HomeScreen(
-                    onLogout = {
-                        userViewModel.logout()
-                        navController.navigate(NavRoutes.Login.route) {
-                            popUpTo(0)
+                val currentUserId = userViewModel.loggedInUser.collectAsState().value?.id
+                if (currentUserId != null) {
+                    HomeScreen(
+                        currentUserId = currentUserId,
+                        onLogout = {
+                            userViewModel.logout()
+                            navController.navigate(NavRoutes.Login.route) {
+                                popUpTo(0)
+                            }
+                        },
+                        onCreateEventClick = {
+                            navController.navigate(NavRoutes.CreateEvent.route)
+                        },
+                        onEventClick = { eventId ->
+                            navController.navigate(NavRoutes.EventDetails.createRoute(eventId))
                         }
-                    },
-                    onCreateEventClick = {
-                        navController.navigate(NavRoutes.CreateEvent.route)
-                    },
-                    onEventClick = { event ->
-                        navController.navigate(NavRoutes.EventDetails.createRoute(event.id))
-                    }
-                )
+                    )
+                }
             }
         }
 
@@ -90,18 +94,22 @@ fun AppNavHost(
             if (!isLoggedIn) {
                 navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
             } else {
-                CreateEventScreen(
-                    eventId = eventId,
-                    onEventCreated = {
-                        navController.popBackStack()
-                    },
-                    onBack = {
-                        navController.popBackStack()
-                    },
-                    onAddInviteeClick = {
-                         navController.navigate(NavRoutes.AddEmails.route)
-                    }
-                )
+                val currentUserId = userViewModel.loggedInUser.collectAsState().value?.id
+                if (currentUserId != null) {
+                    CreateEventScreen(
+                        eventId = eventId,
+                        currentUserId = currentUserId,
+                        onEventCreated = {
+                            navController.popBackStack()
+                        },
+                        onBack = {
+                            navController.popBackStack()
+                        },
+                        onAddInviteeClick = {
+                             navController.navigate(NavRoutes.AddEmails.route)
+                        }
+                    )
+                }
             }
         }
 
@@ -125,18 +133,21 @@ fun AppNavHost(
             if (!isLoggedIn) {
                 navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
             } else {
-                ProfileScreen(
-                    viewModel = userViewModel,
-                    onLogout = {
-                        userViewModel.logout()
-                        navController.navigate(NavRoutes.Login.route) {
-                            popUpTo(0)
+                val currentUserId = userViewModel.loggedInUser.collectAsState().value?.id
+                if (currentUserId != null) {
+                    ProfileScreen(
+                        viewModel = userViewModel,
+                        onLogout = {
+                            userViewModel.logout()
+                            navController.navigate(NavRoutes.Login.route) {
+                                popUpTo(0)
+                            }
+                        },
+                        onEditProfile = {
+                            navController.navigate("edit_profile")
                         }
-                    },
-                    onEditProfile = {
-                        navController.navigate("edit_profile")
-                    }
-                )
+                    )
+                }
             }
         }
 
@@ -157,13 +168,17 @@ fun AppNavHost(
             if (!isLoggedIn) {
                 navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
             } else {
-                EventDetailsScreen(
-                    eventId = eventId,
-                    onBackClick = { navController.popBackStack() },
-                    onEditClick = { event ->
-                        navController.navigate(NavRoutes.CreateEvent.createRoute(event.id))
-                    }
-                )
+                val currentUserId = userViewModel.loggedInUser.collectAsState().value?.id
+                if (currentUserId != null) {
+                    EventDetailsScreen(
+                        eventId = eventId,
+                        currentUserId = currentUserId,
+                        onBackClick = { navController.popBackStack() },
+                        onEditClick = { event ->
+                            navController.navigate(NavRoutes.CreateEvent.createRoute(event.id))
+                        }
+                    )
+                }
             }
         }
 

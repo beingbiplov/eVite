@@ -7,8 +7,9 @@ object ValidationUtil {
     }
 
     fun isValidPassword(password: String): Boolean {
-        // At least 8 chars, 1 uppercase letter, 1 number
-        val regex = Regex("^(?=.*[A-Z])(?=.*\\d).{8,}$")
+        // At least 6 characters and must include at least one number.
+        // Accepts letters, numbers, and special symbols.
+        val regex = Regex("^(?=.*\\d).{6,}$")
         return regex.matches(password)
     }
 }

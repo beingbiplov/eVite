@@ -1,11 +1,12 @@
 package com.example.evite.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,19 +27,39 @@ fun SendInviteScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Send Invitation", fontWeight = FontWeight.Bold) },
+            TopAppBar(
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "eVite",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
                 .padding(paddingValues)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -64,7 +85,7 @@ fun SendInviteScreen(
                     onValueChange = { email = it },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("e.g., john.doe@example.com") },
-                    leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null) },
+                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                     shape = RoundedCornerShape(8.dp),
                     singleLine = true
                 )
@@ -83,7 +104,7 @@ fun SendInviteScreen(
                     onValueChange = { name = it },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("e.g., John Doe") },
-                    leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = null) },
+                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                     shape = RoundedCornerShape(8.dp),
                     singleLine = true
                 )
