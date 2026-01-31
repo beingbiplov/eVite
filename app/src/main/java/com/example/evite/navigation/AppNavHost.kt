@@ -57,18 +57,24 @@ fun AppNavHost(
         // -------------------- HOME -------------------------
         composable(NavRoutes.Home.route) {
             RequireAuth(navController, isLoggedIn) {
-                HomeScreen(
-                    onLogout = {
-                        userViewModel.logout()
-                        navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
-                    },
-                    onCreateEventClick = {
-                        navController.navigate(NavRoutes.CreateEvent.route)
-                    },
-                    onEventClick = { event ->
-                        navController.navigate(NavRoutes.EventDetails.createRoute(event.id))
-                    }
-                )
+                val currentUserId = userViewModel.loggedInUser.collectAsState().value?.id
+                if (currentUserId != null) {
+                    HomeScreen(
+                        currentUserId = currentUserId,
+                        onLogout = {
+                            userViewModel.logout()
+                            navController.navigate(NavRoutes.Login.route) {
+                                popUpTo(0)
+                            }
+                        },
+                        onCreateEventClick = {
+                            navController.navigate(NavRoutes.CreateEvent.route)
+                        },
+                        onEventClick = { eventId ->
+                            navController.navigate(NavRoutes.EventDetails.createRoute(eventId))
+                        }
+                    )
+                }
             }
         }
 
@@ -86,14 +92,22 @@ fun AppNavHost(
             val eventId = backStackEntry.arguments?.getString("eventId")?.toIntOrNull()
 
             RequireAuth(navController, isLoggedIn) {
-                CreateEventScreen(
-                    eventId = eventId,
-                    onEventCreated = { navController.popBackStack() },
-                    onBack = { navController.popBackStack() },
-                    onAddInviteeClick = {
-                        navController.navigate(NavRoutes.AddEmails.route)
-                    }
-                )
+                val currentUserId = userViewModel.loggedInUser.collectAsState().value?.id
+                if (currentUserId != null) {
+                    CreateEventScreen(
+                        eventId = eventId,
+                        currentUserId = currentUserId,
+                        onEventCreated = {
+                            navController.popBackStack()
+                        },
+                        onBack = {
+                            navController.popBackStack()
+                        },
+                        onAddInviteeClick = {
+                             navController.navigate(NavRoutes.AddEmails.route)
+                        }
+                    )
+                }
             }
         }
 
@@ -116,7 +130,9 @@ fun AppNavHost(
                     viewModel = userViewModel,
                     onLogout = {
                         userViewModel.logout()
-                        navController.navigate(NavRoutes.Login.route) { popUpTo(0) }
+                        navController.navigate(NavRoutes.Login.route) {
+                            popUpTo(0)
+                        }
                     },
                     onEditProfile = {
                         navController.navigate("edit_profile")
@@ -143,13 +159,17 @@ fun AppNavHost(
             val eventId = backStackEntry.arguments?.getInt("eventId") ?: 0
 
             RequireAuth(navController, isLoggedIn) {
-                EventDetailsScreen(
-                    eventId = eventId,
-                    onBackClick = { navController.popBackStack() },
-                    onEditClick = { event ->
-                        navController.navigate(NavRoutes.CreateEvent.createRoute(event.id))
-                    }
-                )
+                val currentUserId = userViewModel.loggedInUser.collectAsState().value?.id
+                if (currentUserId != null) {
+                    EventDetailsScreen(
+                        eventId = eventId,
+                        currentUserId = currentUserId,
+                        onBackClick = { navController.popBackStack() },
+                        onEditClick = { event ->
+                            navController.navigate(NavRoutes.CreateEvent.createRoute(event.id))
+                        }
+                    )
+                }
             }
         }
     }

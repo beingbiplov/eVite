@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 
-class EventDetailsViewModel(application: Application) : AndroidViewModel(application) {
+class EventDetailsViewModel(application: Application, private val currentUserId: Int) : AndroidViewModel(application) {
     private val repository: EventRepository
 
     private val _event = MutableStateFlow<Event?>(null)
@@ -31,18 +31,22 @@ class EventDetailsViewModel(application: Application) : AndroidViewModel(applica
 
     fun loadEvent(eventId: Int) {
         viewModelScope.launch {
-            _event.value = repository.getEvent(eventId)
+            // Only load events that belong to the current user
+            _event.value = repository.getEventByIdAndUser(eventId, currentUserId)
             _invitees.value = repository.getEventInvitees(eventId)
         }
     }
 
     fun deleteEvent(event: Event, onComplete: () -> Unit) {
         viewModelScope.launch {
-            _isLoading.value = true
-            delay(1000) // 1 second delay to show the "deleting" state
-            repository.deleteEvent(event)
-            _isLoading.value = false
-            onComplete()
+            // Verify ownership before deletion
+            if (event.userId == currentUserId) {
+                _isLoading.value = true
+                delay(1000) // 1 second delay to show the "deleting" state
+                repository.deleteEventByIdAndUser(event.id, currentUserId)
+                _isLoading.value = false
+                onComplete()
+            }
         }
     }
 }

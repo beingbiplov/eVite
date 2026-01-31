@@ -1,5 +1,7 @@
 package com.example.evite.ui.screens
 
+import com.example.evite.ui.theme.getThemeStyle
+
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.compose.foundation.Image
@@ -27,137 +29,155 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.*
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.evite.data.local.entities.Event
 import com.example.evite.ui.viewmodels.HomeViewModel
+import com.example.evite.ui.viewmodels.HomeViewModelFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    currentUserId: Int,
     onLogout: () -> Unit = {},
     onCreateEventClick: () -> Unit = {},
-    onEventClick: (Event) -> Unit = {},
-    viewModel: HomeViewModel = viewModel()
+    onEventClick: (Int) -> Unit = {},
+    viewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(LocalContext.current.applicationContext as android.app.Application, currentUserId))
 ) {
     val events by viewModel.events.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Email,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Evite",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
-    ) { paddingValues ->
+    val goldenBrush = Brush.horizontalGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.primary,
+            Color(0xFFFFD700), // Gold
+            MaterialTheme.colorScheme.secondary
+        )
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = paddingValues.calculateTopPadding())
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
         ) {
-            // Divider after header
-            HorizontalDivider(
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant
-            )
+            // Welcome Section (No Box, with Animation)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 24.dp)
+            ) {
+                Text(
+                    text = "Welcome to eVite",
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        brush = goldenBrush
+                    ),
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-1).sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Create, invite, and celebrate.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            // Create Event Button with Gradient
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.secondary
+                            )
+                        )
+                    )
+                    .clickable(onClick = onCreateEventClick),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Create New Event",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Create Event Button
-            Button(
-                onClick = onCreateEventClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(50.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Text(
-                    "Create New Event",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Section Title
-            Text(
-                "My Events",
-                modifier = Modifier.padding(horizontal = 16.dp),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Event List
+            // Events List
             if (events.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                        .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(24.dp)
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            imageVector = Icons.Default.EventNote,
+                            Icons.Default.Event,
                             contentDescription = null,
                             modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             "No events yet",
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Create your first event!",
+                            "Create your first event to get started",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
                 }
             } else {
+                Text(
+                    text = "Upcoming Events",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
+
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                    modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 0.dp)
+                    contentPadding = PaddingValues(bottom = 24.dp)
                 ) {
-                    // Show all events, scrollable
                     items(events) { event ->
                         EventCard(
                             event = event,
-                            onClick = { onEventClick(event) }
+                            onClick = { onEventClick(event.id) }
                         )
                     }
                 }
@@ -165,7 +185,6 @@ fun HomeScreen(
         }
     }
 }
-
 
 @Composable
 fun EventCard(
@@ -175,7 +194,6 @@ fun EventCard(
     val context = LocalContext.current
     var bitmap by remember(event.imageUri) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
 
-    // Load image if URI is provided
     LaunchedEffect(event.imageUri) {
         if (event.imageUri != null) {
             withContext(Dispatchers.IO) {
@@ -191,144 +209,112 @@ fun EventCard(
         }
     }
 
-    // Get theme colors and icon
     val (gradientColors, icon) = getThemeStyle(event.theme)
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp)
+            .height(120.dp)
+            .padding(horizontal = 16.dp, vertical = 6.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Background: Image (blurred) or Gradient
+            // Background Layer
             if (bitmap != null) {
                 Image(
                     bitmap = bitmap!!,
                     contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .blur(20.dp),
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-                // Lighter glassmorphic overlay
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    gradientColors[0].copy(alpha = 0.7f),
-                                    gradientColors[1].copy(alpha = 0.85f)
+                                    Color.Black.copy(alpha = 0.2f),
+                                    Color.Black.copy(alpha = 0.7f)
                                 )
                             )
                         )
                 )
             } else {
-                // Lighter gradient background based on theme
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(
-                                    gradientColors[0].copy(alpha = 0.85f),
-                                    gradientColors[1].copy(alpha = 0.95f)
-                                )
+                            brush = Brush.linearGradient(
+                                colors = gradientColors
                             )
                         )
                 )
             }
 
-            // Content
+            // Content Layer
             Row(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Theme Icon with glassmorphic effect
+                // Icon Chip
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.White.copy(alpha = 0.95f),
-                    modifier = Modifier.size(68.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White.copy(alpha = 0.25f),
+                    modifier = Modifier.size(60.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
+                    Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
-                            modifier = Modifier.size(36.dp),
-                            tint = gradientColors[0]
+                            modifier = Modifier.size(32.dp),
+                            tint = Color.White
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // Event Details
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.Center
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = event.title,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         maxLines = 1
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = event.dateTime,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.95f),
-                        maxLines = 1
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = Color.White.copy(alpha = 0.8f)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = event.dateTime,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.8f),
+                            maxLines = 1
+                        )
+                    }
                 }
 
-                // Arrow Icon
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
+                    tint = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.size(28.dp)
                 )
             }
         }
     }
 }
 
-@Composable
-fun getThemeStyle(theme: String): Pair<List<Color>, ImageVector> {
-    return when (theme.lowercase()) {
-        "party" -> Pair(
-            listOf(Color(0xFFFF6B9D), Color(0xFFC239B3)),
-            Icons.Default.Cake  // Cake icon for party
-        )
-        "business" -> Pair(
-            listOf(Color(0xFF2196F3), Color(0xFF1976D2)),
-            Icons.Default.Business
-        )
-        "casual" -> Pair(
-            listOf(Color(0xFF4CAF50), Color(0xFF388E3C)),
-            Icons.Default.Coffee  // Coffee for casual
-        )
-        "formal" -> Pair(
-            listOf(Color(0xFF9C27B0), Color(0xFF7B1FA2)),
-            Icons.Default.Star  // Star for formal
-        )
-        "wedding" -> Pair(
-            listOf(Color(0xFFE91E63), Color(0xFFC2185B)),
-            Icons.Default.Favorite  // Heart for wedding
-        )
-        else -> Pair(
-            listOf(Color(0xFFFF9800), Color(0xFFF57C00)),
-            Icons.Default.Event
-        )
-    }
-}
+
+

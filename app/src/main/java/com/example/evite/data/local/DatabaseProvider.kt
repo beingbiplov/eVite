@@ -15,6 +15,7 @@ object DatabaseProvider {
                 AppDatabase::class.java,
                 "evite_db"
             )
+            .addMigrations(AppDatabase.MIGRATION_3_4)
             .fallbackToDestructiveMigration()
             .build()
             INSTANCE = instance

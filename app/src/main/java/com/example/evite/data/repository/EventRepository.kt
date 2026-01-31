@@ -46,10 +46,24 @@ class EventRepository(
     }
 
     // -------------------------------------------------------
+    // Read (User Events) - REACTIVE
+    // -------------------------------------------------------
+    fun getEventsByUser(userId: Int): Flow<List<Event>> {
+        return eventDao.getEventsByUser(userId)
+    }
+
+    // -------------------------------------------------------
     // Read (One)
     // -------------------------------------------------------
     suspend fun getEvent(id: Int): Event? {
         return eventDao.getEventById(id)
+    }
+
+    // -------------------------------------------------------
+    // Read (One with User Validation)
+    // -------------------------------------------------------
+    suspend fun getEventByIdAndUser(id: Int, userId: Int): Event? {
+        return eventDao.getEventByIdAndUser(id, userId)
     }
 
     // -------------------------------------------------------
@@ -64,6 +78,16 @@ class EventRepository(
     // -------------------------------------------------------
     suspend fun updateEvent(event: Event) {
         eventDao.updateEvent(event)
+    }
+
+    // -------------------------------------------------------
+    // Update with User Validation
+    // -------------------------------------------------------
+    suspend fun updateEventWithValidation(event: Event, userId: Int) {
+        // Verify ownership before update
+        if (event.userId == userId) {
+            eventDao.updateEvent(event)
+        }
     }
 
     /**
@@ -84,10 +108,36 @@ class EventRepository(
         }
     }
 
+    /**
+     * Updates event and its invitees with user validation.
+     * Ensures only the event owner can modify the event.
+     */
+    suspend fun updateEventWithInviteesAndValidation(event: Event, invitees: List<com.example.evite.data.local.entities.Invitee>, userId: Int) {
+        // Verify ownership before update
+        if (event.userId == userId) {
+            eventDao.updateEvent(event)
+            
+            if (inviteeDao != null) {
+                inviteeDao.deleteInviteesForEvent(event.id)
+                if (invitees.isNotEmpty()) {
+                    val updatedInvitees = invitees.map { it.copy(eventId = event.id) }
+                    inviteeDao.insertInvitees(updatedInvitees)
+                }
+            }
+        }
+    }
+
     // -------------------------------------------------------
     // Delete
     // -------------------------------------------------------
     suspend fun deleteEvent(event: Event) {
         eventDao.deleteEvent(event)
+    }
+
+    // -------------------------------------------------------
+    // Delete with User Validation
+    // -------------------------------------------------------
+    suspend fun deleteEventByIdAndUser(id: Int, userId: Int) {
+        eventDao.deleteEventByIdAndUser(id, userId)
     }
 }

@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class EventViewModel(application: Application) : AndroidViewModel(application) {
+class EventViewModel(application: Application, private val currentUserId: Int) : AndroidViewModel(application) {
 
     // Initialize database and repository for data persistence
     // Initialize database and repository for data persistence
@@ -36,10 +36,11 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Loads an existing event into the form fields.
+     * Only loads events that belong to the current user.
      */
     fun loadEventForEdit(eventId: Int) {
         viewModelScope.launch {
-            val event = repository.getEvent(eventId)
+            val event = repository.getEventByIdAndUser(eventId, currentUserId)
             if (event != null) {
                 currentEventId.value = event.id
                 eventTitle.value = event.title
@@ -76,6 +77,7 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
                 // UPDATE existing event
                 val updatedEvent = Event(
                     id = eventId,
+                    userId = currentUserId,  // Ensure userId is set for ownership
                     title = eventTitle.value,
                     description = eventDescription.value,
                     dateTime = eventDate.value,
@@ -83,10 +85,11 @@ class EventViewModel(application: Application) : AndroidViewModel(application) {
                     theme = eventTheme.value,
                     imageUri = eventImageUri.value
                 )
-                repository.updateEventWithInvitees(updatedEvent, _temporaryInvitees.value)
+                repository.updateEventWithInviteesAndValidation(updatedEvent, _temporaryInvitees.value, currentUserId)
             } else {
                 // CREATE new event
                 val newEvent = Event(
+                    userId = currentUserId,  // Set current user as owner
                     title = eventTitle.value,
                     description = eventDescription.value,
                     dateTime = eventDate.value,
