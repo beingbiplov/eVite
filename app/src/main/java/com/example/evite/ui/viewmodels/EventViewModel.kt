@@ -70,14 +70,17 @@ class EventViewModel(application: Application, private val currentUserId: Int) :
             }
 
             _creationState.value = "loading"
-            kotlinx.coroutines.delay(1000) // Simulate processing
+            
+            // Get organizer details for the email
+            val user = db.userDao().getUserById(currentUserId)
+            val organizerName = user?.fullName ?: "Someone"
 
             val eventId = currentEventId.value
             if (eventId != null) {
                 // UPDATE existing event
                 val updatedEvent = Event(
                     id = eventId,
-                    userId = currentUserId,  // Ensure userId is set for ownership
+                    userId = currentUserId,
                     title = eventTitle.value,
                     description = eventDescription.value,
                     dateTime = eventDate.value,
@@ -89,7 +92,7 @@ class EventViewModel(application: Application, private val currentUserId: Int) :
             } else {
                 // CREATE new event
                 val newEvent = Event(
-                    userId = currentUserId,  // Set current user as owner
+                    userId = currentUserId,
                     title = eventTitle.value,
                     description = eventDescription.value,
                     dateTime = eventDate.value,
@@ -98,6 +101,20 @@ class EventViewModel(application: Application, private val currentUserId: Int) :
                     imageUri = eventImageUri.value
                 )
                 repository.createEventWithInvitees(newEvent, _temporaryInvitees.value)
+            }
+
+            // Send Emails to all invitees
+            val currentInvitees = _temporaryInvitees.value
+            if (currentInvitees.isNotEmpty()) {
+                currentInvitees.forEach { invitee ->
+                    com.example.evite.data.network.EmailService.sendInviteEmail(
+                        toEmail = invitee.email,
+                        eventTitle = eventTitle.value,
+                        eventDate = eventDate.value,
+                        eventLocation = eventLocation.value,
+                        organizerName = organizerName
+                    )
+                }
             }
 
             // Notify UI that save completed successfully

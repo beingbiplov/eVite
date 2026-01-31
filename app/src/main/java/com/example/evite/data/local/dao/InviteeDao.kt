@@ -17,4 +17,7 @@ interface InviteeDao {
 
     @Query("DELETE FROM invitees WHERE eventId = :eventId")
     suspend fun deleteInviteesForEvent(eventId: Int)
+
+    @Query("UPDATE invitees SET status = :status WHERE email = :email AND eventId = :eventId")
+    suspend fun updateInviteeStatus(email: String, eventId: Int, status: String)
 }

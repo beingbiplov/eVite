@@ -1,0 +1,64 @@
+%% --- eVite App Architecture & Database Diagrams ---
+
+%% 1. COMPONENT DIAGRAM (Overall System Architecture)
+graph TD
+    subgraph "PRESENTATION LAYER (UI)"
+        Compose["Jetpack Compose Screens<br/>(Home, Login, Create)"]
+        Nav["AppNavHost<br/>(Navigation & Auth Guards)"]
+        Compose --- Nav
+    end
+
+    subgraph "LOGIC LAYER (Architecture)"
+        VM["ViewModels<br/>(UserViewModel, EventViewModel)"]
+        Repo["Repositories<br/>(UserRepo, EventRepo)"]
+        Nav --> VM
+        VM --> Repo
+    end
+
+    subgraph "DATA LAYER (Infrastructure)"
+        Room[("Room Database<br/>(Local SQLite)")]
+        Resend["Resend API<br/>(Email Cloud)"]
+        Repo --> Room
+        Repo --> Resend
+    end
+
+    %% Visual Styling for Presentation
+    classDef blue fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
+    classDef green fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef gold fill:#fff8e1,stroke:#fbc02d,stroke-width:2px;
+    
+    class Compose,Nav blue;
+    class VM,Repo green;
+    class Room,Resend gold;
+
+%% 2. DATABASE UML (Entity Relationship Diagram)
+%% To see this separately, you can create a new 'classDiagram' or 'erDiagram' block
+
+erDiagram
+    USER ||--o{ EVENT : "creates"
+    EVENT ||--o{ INVITEE : "has guest list"
+
+    USER {
+        int id PK
+        string fullName
+        string email UK
+        string password
+    }
+
+    EVENT {
+        int id PK
+        int userId FK "Linked to User.id"
+        string title
+        string description
+        string dateTime
+        string location
+        string theme
+    }
+
+    INVITEE {
+        int id PK
+        int eventId FK "Linked to Event.id"
+        string name
+        string email
+        string status "Pending / Accepted / Declined"
+    }

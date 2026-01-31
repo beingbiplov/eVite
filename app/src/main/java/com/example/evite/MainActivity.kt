@@ -15,8 +15,8 @@ import com.example.evite.ui.viewmodels.UserViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -25,7 +25,6 @@ class MainActivity : ComponentActivity() {
                 EviteApp()
             }
         }
-
     }
 }
 
